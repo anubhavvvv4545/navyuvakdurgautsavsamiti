@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin | navyuvakdurgautsavsamiti</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#fff8ef;color:#281713}
+header{background:linear-gradient(135deg,#8f1d24,#d85b20);color:#fff;padding:18px}.wrap{max-width:900px;margin:auto}.brand{font-weight:900}
+main{padding:24px 16px}.card{background:#fff;border:1px solid #eaded5;border-radius:18px;padding:20px;margin:15px 0;box-shadow:0 8px 28px #0000000d}
+input,textarea,button{font:inherit;width:100%;padding:12px;border-radius:12px;border:1px solid #d8c8c0}button{background:#8f1d24;color:white;border:0;font-weight:800;cursor:pointer}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}.photo{position:relative}.photo img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px}.photo button{position:absolute;top:6px;right:6px;width:auto;padding:7px;background:#b42318}
+label{display:block;font-weight:800;margin:12px 0 6px}.muted{color:#76655d;font-size:14px}.hidden{display:none!important}.status{font-size:13px;margin-top:10px}
+</style>
+</head>
+<body><header><div class="wrap"><div class="brand">navyuvakdurgautsavsamiti — Admin</div></div></header>
+<main class="wrap">
+<div id="login" class="card"><h1>Admin Login</h1><label>Email</label><input id="email" type="email" autocomplete="email"><label>Password</label><input id="password" type="password" autocomplete="current-password"><button id="loginBtn" style="margin-top:12px">Log in</button><div id="loginMsg" class="status"></div></div>
+<div id="panel" class="hidden">
+<div class="card"><div class="grid"><div><h2>Upload Photos</h2><p class="muted">Choose photos from your phone. They will be uploaded to the public gallery.</p></div><div><button id="logout">Log out</button></div></div><input id="files" type="file" accept="image/*" multiple style="margin-top:10px"><button id="upload" style="margin-top:12px">Upload & Publish</button><div id="uploadMsg" class="status"></div></div>
+<div class="card"><h2>Announcement</h2><textarea id="announcement" placeholder="Write an announcement..."></textarea><button id="saveAnnouncement" style="margin-top:10px">Publish Announcement</button><div id="annMsg" class="status"></div></div>
+<div class="card"><h2>Published Gallery</h2><div id="gallery" class="gallery"></div><p id="empty" class="muted">Loading…</p></div>
+</div></main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script>
+<script>
+let sb;
+const $=id=>document.getElementById(id);
+async function start(){
+ if(window.SUPABASE_URL.includes("PASTE_")){$("loginMsg").textContent="First add your Supabase URL and anon/publishable key in config.js.";return}
+ sb=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
+ const {data:{session}}=await sb.auth.getSession(); toggle(!!session); if(session)load();
+}
+function toggle(on){$("login").classList.toggle("hidden",on);$("panel").classList.toggle("hidden",!on)}
+$("loginBtn").onclick=async()=>{const {error}=await sb.auth.signInWithPassword({email:$("email").value,password:$("password").value});$("loginMsg").textContent=error?error.message:"";if(!error){toggle(true);load()}};
+$("logout").onclick=async()=>{await sb.auth.signOut();toggle(false)};
+$("upload").onclick=async()=>{
+ const fs=[...$("files").files];if(!fs.length){$("uploadMsg").textContent="Choose photos first.";return}
+ $("uploadMsg").textContent="Uploading…";
+ for(const f of fs){const safe=Date.now()+"-"+Math.random().toString(36).slice(2)+"-"+f.name.replace(/[^a-zA-Z0-9._-]/g,"_");const {error}=await sb.storage.from("gallery").upload(safe,f,{cacheControl:"3600",upsert:false,contentType:f.type});if(error){$("uploadMsg").textContent=error.message;return}}
+ $("files").value="";$("uploadMsg").textContent="Published successfully.";load();
+};
+$("saveAnnouncement").onclick=async()=>{const {error}=await sb.from("site_settings").upsert({id:1,announcement:$("announcement").value});$("annMsg").textContent=error?error.message:"Published successfully."};
+async function load(){
+ const {data:s}=await sb.from("site_settings").select("announcement").eq("id",1).maybeSingle();$("announcement").value=s?.announcement||"";
+ const {data:files}=await sb.storage.from("gallery").list("",{sortBy:{column:"created_at",order:"desc"}});
+ const g=$("gallery");g.innerHTML="";$("empty").classList.toggle("hidden",(files||[]).length>0);
+ (files||[]).forEach(f=>{const d=document.createElement("div");d.className="photo";const im=document.createElement("img");im.src=sb.storage.from("gallery").getPublicUrl(f.name).data.publicUrl;const b=document.createElement("button");b.textContent="Delete";b.onclick=async()=>{if(confirm("Delete this photo?")){await sb.storage.from("gallery").remove([f.name]);load()}};d.append(im,b);g.appendChild(d)});
+}
+start();
+</script></body></html>
