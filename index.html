@@ -31,9 +31,9 @@ footer{text-align:center;padding:30px 16px;color:#806d64}
  const sb=supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
  const {data:settings}=await sb.from("site_settings").select("announcement").eq("id",1).maybeSingle();
  document.querySelector("#announcement").textContent=settings?.announcement||"Durga Puja updates will be announced here.";
- const {data:photos}=await sb.storage.from("gallery").list("",{sortBy:{column:"created_at",order:"desc"}});
+ const {data:photos}=await sb.storage.from("Gallery").list("",{sortBy:{column:"created_at",order:"desc"}});
  const grid=document.querySelector("#galleryGrid");grid.innerHTML="";
- (photos||[]).forEach(p=>{const {data}=sb.storage.from("gallery").getPublicUrl(p.name);const img=document.createElement("img");img.src=data.publicUrl;img.alt="Durga Puja gallery photo";grid.appendChild(img)});
+ (photos||[]).forEach(p=>{const {data}=sb.storage.from("Gallery").getPublicUrl(p.name);const img=document.createElement("img");img.src=data.publicUrl;img.alt="Durga Puja gallery photo";grid.appendChild(img)});
  empty.classList.toggle("hidden",(photos||[]).length>0);
 })();
 </script>
