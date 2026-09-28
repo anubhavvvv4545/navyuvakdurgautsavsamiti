@@ -1,6 +1,60 @@
 <!doctype html>
 <html lang="en">
-<head>
+<head><style>
+  .flower {
+    position: fixed;
+    top: -40px;
+    z-index: 9999;
+    pointer-events: none;
+    user-select: none;
+    animation: flowerFall linear forwards;
+  }
+
+  @keyframes flowerFall {
+    0% {
+      transform: translateY(-40px) rotate(0deg);
+      opacity: 0;
+    }
+
+    10% {
+      opacity: 0.9;
+    }
+
+    90% {
+      opacity: 0.8;
+    }
+
+    100% {
+      transform: translateY(110vh) rotate(360deg);
+      opacity: 0;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const flowers = ["🌸", "🌺", "🌼", "🌷"];
+
+    function createFlower() {
+      const flower = document.createElement("div");
+      flower.className = "flower";
+      flower.textContent =
+        flowers[Math.floor(Math.random() * flowers.length)];
+
+      flower.style.left = Math.random() * 100 + "vw";
+      flower.style.fontSize = (14 + Math.random() * 14) + "px";
+      flower.style.animationDuration = (7 + Math.random() * 6) + "s";
+
+      document.body.appendChild(flower);
+
+      setTimeout(() => {
+        flower.remove();
+      }, 14000);
+    }
+
+    setInterval(createFlower, 900);
+  });
+</script>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Navyuvakdurgautsavsamiti | Durga Puja Since 1988</title>
 <style>
